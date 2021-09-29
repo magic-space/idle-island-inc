@@ -7,4 +7,10 @@ export const clamp = (value: number, min = 0, max = 1): number => Math.max(min, 
 export const random = (min: number, max: number): number => Math.random() * (max - min) + min;
 export const lerp = (v0: number, v1: number, t: number): number => v0 + t * (v1 - v0);
 
-export const PI = Object.freeze({ m2: Math.PI * 2, d2: Math.PI / 2 });
+export const PI = Object.freeze({
+  m2: Math.PI * 2,
+  d2: Math.PI / 2,
+  d3: Math.PI / 3,
+  d4: Math.PI / 4,
+  d6: Math.PI / 6
+});

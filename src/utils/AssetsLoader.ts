@@ -1,6 +1,6 @@
+import { LoadingManager as ThreeLoadingManager } from 'three/src/loaders/LoadingManager';
 import { CubeTextureLoader } from 'three/src/loaders/CubeTextureLoader';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader';
-import { LoadingManager } from 'three/src/loaders/LoadingManager';
 
 import { TextureLoader } from 'three/src/loaders/TextureLoader';
 import { CubeTexture } from 'three/src/textures/CubeTexture';
@@ -12,31 +12,27 @@ import { RGBFormat } from 'three/src/constants';
 
 export namespace Assets
 {
-  export type Animations = Array<import('three/src/animation/AnimationClip').AnimationClip>;
+  type Animations = Array<import('three/src/animation/AnimationClip').AnimationClip>;
   type Resolve<Asset> = (asset?: Asset | PromiseLike<Asset>) => void;
-
-  export type Texture = import ('three/src/textures/Texture').Texture;
-  export type GLTFModel = { scene: GLTF, animations?: Animations };
-  export type GLTF = import('three/src/objects/Group').Group;
 
   type ProgressEventTarget = EventTarget & { responseURL: string };
   type Assets = Texture | CubeTexture | GLTFModel | AudioBuffer;
   type Reject = (error: ErrorEvent) => void;
 
-  export interface Callbacks {
+  type Callbacks = {
     onProgress: (event: ProgressEvent<EventTarget>) => void;
     onLoad: (asset: Assets) => void;
     onError: Reject;
   }
 
-  export class Loader extends LoadingManager
+  class LoadingManager extends ThreeLoadingManager
   {
     private readonly cubeTexture = new CubeTextureLoader(this);
     private readonly texture = new TextureLoader(this);
     private readonly gltf = new GLTFLoader(this);
     private readonly audio = new AudioLoader();
 
-    private readonly textureBasePath = './assets/images';
+    private readonly textureBasePath = './assets/textures';
     private readonly modelBasePath = './assets/models/';
     private readonly audioBasePath = './assets/sounds/';
 
@@ -105,14 +101,14 @@ export namespace Assets
     public override onProgress = (url: string, loaded: number, total: number): void => {
       const progress = loaded * 100 / total;
 
-      CustomEvents.dispatch('loading:progress', {
+      CustomEvents.dispatch('Loading:Progress', {
         uuid: this.uuid,
         progress
       });
     }
 
     public override onStart = (): void => {
-      CustomEvents.dispatch('loading:start', this.uuid);
+      CustomEvents.dispatch('Loading:Start', this.uuid);
     }
 
     public override onError = (url: string): void => {
@@ -120,7 +116,13 @@ export namespace Assets
     }
 
     public override onLoad = (): void => {
-      CustomEvents.dispatch('loading:end', this.uuid);
+      CustomEvents.dispatch('Loading:End', this.uuid);
     }
   }
+
+  export type Texture = import ('three/src/textures/Texture').Texture;
+  export type GLTFModel = { scene: GLTF, animations?: Animations };
+  export type GLTF = import('three/src/objects/Group').Group;
+
+  export const Loader = new LoadingManager();
 }

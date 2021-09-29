@@ -1,25 +1,26 @@
-import { MeshPhongMaterial } from 'three/src/materials/MeshPhongMaterial';
+import { MeshBasicMaterial } from 'three/src/materials/MeshBasicMaterial';
 import { PerspectiveCamera } from 'three/src/cameras/PerspectiveCamera';
 import { PCFSoftShadowMap, sRGBEncoding } from 'three/src/constants';
+
 import { DirectionalLight } from 'three/src/lights/DirectionalLight';
+import { PlaneGeometry } from 'three/src/geometries/PlaneGeometry';
 import { WebGLRenderer } from 'three/src/renderers/WebGLRenderer';
-
-import { BoxGeometry } from 'three/src/geometries/BoxGeometry';
-import type { Material } from 'three/src/materials/Material';
 import { AmbientLight } from 'three/src/lights/AmbientLight';
-import { GridHelper } from 'three/src/helpers/GridHelper';
+import { Event, CustomEvents } from '@/utils/CustomEvents';
 
+import type { Group } from 'three/src/objects/Group';
+import SandDeliveler from '@/ships/SandDeliveler';
 import { Scene } from 'three/src/scenes/Scene';
 import { Mesh } from 'three/src/objects/Mesh';
+
 import CameraControls from '@/CameraControls';
+import SandDigger from '@/ships/SandDigger';
 import { Fog } from 'three/src/scenes/Fog';
 import Viewport from '@/utils/Viewport';
-import { Color } from '@/utils/Color';
 
-interface GridMaterial extends Material {
-  transparent: boolean,
-  opacity: number
-}
+import { Color } from '@/utils/Color';
+import { PI } from '@/utils/Number';
+import Island from '@/Island';
 
 export default class MainScene
 {
@@ -34,26 +35,26 @@ export default class MainScene
   private raf: number;
 
   public constructor (root: HTMLElement) {
-    this.updateScene();
-    this.updateCamera();
+    new SandDeliveler();
+    new SandDigger();
+    new Island();
 
+    this.createSea();
     this.createLights();
-    this.createGround();
+
+    this.updateEnvironment();
+    this.addEventListeners();
 
     const scene = this.updateRenderer(root);
-    this.controls = new CameraControls(this.camera, scene);
-
     this.raf = requestAnimationFrame(this.onRender);
-    Viewport.addResizeCallback(this.onResize);
+    this.controls = new CameraControls(this.camera, scene);
   }
 
-  private updateScene (): void {
-    this.scene.background = Color.getClass(Color.LIGHT);
-    this.scene.fog = new Fog(Color.LIGHT, 50, 250);
-  }
+  private updateEnvironment (): void {
+    this.scene.background = Color.getClass(Color.SKY);
+    this.scene.fog = new Fog(Color.SKY, 100, 300);
 
-  private updateCamera (): void {
-    this.camera.position.set(0, 10, -50);
+    this.camera.position.set(0, 50, -75);
     this.camera.lookAt(0, 0, 0);
   }
 
@@ -79,23 +80,44 @@ export default class MainScene
     this.scene.add(ambient);
   }
 
-  private createGround (): void {
-    const ground = new Mesh(
-      new BoxGeometry(500, 500, 1),
-      new MeshPhongMaterial({
-        color: Color.LIGHT,
-        depthWrite: false
+  private createSea (): void {
+    const seabed = new Mesh(
+      new PlaneGeometry(750, 750),
+      new MeshBasicMaterial({
+        color: Color.SEABED
       })
     );
 
-    ground.rotateX(-Math.PI / 2);
-    ground.receiveShadow = true;
-    this.scene.add(ground);
+    const sea = new Mesh(
+      new PlaneGeometry(500, 500),
+      new MeshBasicMaterial({
+        transparent: true,
+        color: Color.SEA,
+        opacity: 0.75
+      })
+    );
 
-    const grid = new GridHelper(500, 50, 0, 0);
-    (grid.material as GridMaterial).transparent = true;
-    (grid.material as GridMaterial).opacity = 0.25;
-    this.scene.add(grid);
+    sea.receiveShadow = true;
+    seabed.position.y = -5.0;
+    seabed.rotateX(-PI.d2);
+    sea.rotateX(-PI.d2);
+
+    this.scene.add(seabed);
+    this.scene.add(sea);
+  }
+
+  private addEventListeners (): void {
+    Viewport.addResizeCallback(this.onResize);
+    CustomEvents.add('Add:GameObject', this.addGameObject.bind(this));
+    CustomEvents.add('Remove:GameObject', this.removeGameObject.bind(this));
+  }
+
+  private addGameObject (event: Event): void {
+    this.scene.add(event.data as Group);
+  }
+
+  private removeGameObject (event: Event): void {
+    this.scene.remove(event.data as Group);
   }
 
   private updateRenderer (root: HTMLElement): HTMLCanvasElement {
@@ -135,6 +157,8 @@ export default class MainScene
 
     this.controls.dispose();
     this.renderer.dispose();
+
+    CustomEvents.dispose();
     this.scene.clear();
   }
 }

@@ -5,7 +5,7 @@ export default class CameraControls extends OrbitControls
 {
   public constructor (camera: PerspectiveCamera, scene: HTMLElement) {
     super(camera, scene);
-    this.target.set(0.0, 0.0, 25.0);
+    this.target.set(0.0, 0.0, 0.0);
   }
 
   public override update (): boolean {

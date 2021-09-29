@@ -4,10 +4,12 @@ export namespace Color
 {
   export type RGB = { r: number, g: number, b: number };
 
-  export const BLACK = 0x000000;
-  export const DARK  = 0x222222;
-  export const LIGHT = 0xBBBBBB;
+  export const SEABED = 0x003D60;
   export const WHITE = 0xFFFFFF;
+
+  export const SAND = 0xF2D16B;
+  export const SEA = 0x008AB7;
+  export const SKY = 0xB9EBFF;
 
   export const blend = (initial: string, target: string, p = 0.5): string => {
     const iColor: RGB = hexToRGB(initial);
